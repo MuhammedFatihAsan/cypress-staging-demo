@@ -1,8 +1,8 @@
 name: e2e-scheduled
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"   # her 15 dk (UTC)
+  #schedule:
+    #- cron: "*/15 * * * *"   # her 15 dk (UTC)
   workflow_dispatch: {}
 
 jobs:
