@@ -2,8 +2,8 @@ name: e2e-scheduled
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # Her 15 dakikada bir (UTC)
-  workflow_dispatch: {}       # Elle tetiklemek için
+    - cron: "*/15 * * * *"   # her 15 dk (UTC)
+  workflow_dispatch: {}
 
 jobs:
   e2e:
@@ -15,22 +15,36 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'npm' }
 
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
       - name: Install deps
         run: npm ci
 
+      - name: Verify Cypress
+        run: npx cypress verify
+
+      - name: Prepare artifact dirs
+        run: mkdir -p cypress/screenshots cypress/videos reports
+
       - name: Start app (background) and wait for health
         run: |
-          node server.js &                       # app'i arkada başlat
-          for i in {1..30}; do                   # 30 sn'ye kadar bekle
+          node server.js &
+          for i in {1..60}; do
             curl -sf http://127.0.0.1:3000/health && break
             sleep 1
           done
+          curl -sf http://127.0.0.1:3000/env || true
 
       - name: Run Cypress (headless)
         id: run
         env:
           CY_BASE_URL: http://127.0.0.1:3000
           CY_WEBHOOK_BASE: http://127.0.0.1:3000
+        shell: bash
         run: |
           set +e
           npx cypress run --reporter junit --reporter-options "mochaFile=reports/junit/results-[hash].xml"
