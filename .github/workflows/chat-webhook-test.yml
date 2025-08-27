@@ -1,5 +1,8 @@
 name: chat-webhook-test
-on: { workflow_dispatch: {} }
+on: 
+    schedule:
+        - cron: "*/15 * * * *"   # her 15 dk (UTC)
+    workflow_dispatch: {}
 
 jobs:
   ping:
@@ -10,5 +13,5 @@ jobs:
           CHAT_WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
         run: |
           curl -s -X POST -H "Content-Type: application/json" \
-            -d '{"text":"✅ Chat webhook testi: Merhaba!"}' \
+            -d '{"text":"✅ Chat webhook testi: Zamanlayıcı deneme !!!"}' \
             "$CHAT_WEBHOOK"
