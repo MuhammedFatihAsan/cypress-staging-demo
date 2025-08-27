@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"          # host:container
+    environment:
+      - NODE_ENV=production
+      - APP_ENV=staging      # lokalde staging benzeri çalıştırıyoruz
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+
+  cypress:
+    image: cypress/included:13.6.2
+    depends_on:
+      app:
+        condition: service_healthy
+    working_dir: /e2e
+    volumes:
+      - ./:/e2e
+    environment:
+      # Cypress config anahtarlarını env ile override edebilirsin:
+      - CYPRESS_baseUrl=http://app:3000       # baseUrl’i buradan ver
+      - CY_WEBHOOK_BASE=http://app:3000       # bizim cypress.config.js içinde kullanılıyor
+    # EntryPoint zaten `cypress run`; ekstra komut vermeye gerek yok
+    # istersen argüman ekleyebilirsin:
+    command: ["--headless", "--browser", "electron"]

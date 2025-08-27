@@ -1,0 +1,16 @@
+{
+  "name": "cypress-staging-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "cypress": "cypress run"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "cypress": "^13.6.2"
+  }
+}

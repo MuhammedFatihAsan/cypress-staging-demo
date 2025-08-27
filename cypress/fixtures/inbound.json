@@ -1,0 +1,16 @@
+{
+  "object": "demo_provider",
+  "entry": [
+    {
+      "changes": [
+        {
+          "value": {
+            "messages": [
+              { "id": "in-1", "from": "provider", "text": { "body": "Hoş geldin!" } }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

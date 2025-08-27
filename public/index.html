@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Chat Demo</title>
+  <style>
+    body { font: 16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 720px; margin: 32px auto; padding: 0 16px; }
+    #log { border: 1px solid #ddd; border-radius: 8px; padding: 12px; min-height: 200px; }
+    .msg { margin: 8px 0; }
+    .from { font-weight: 600; margin-right: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Mini Chat Demo</h1>
+  <p>Bu sayfa 1 sn'de bir mesajları /api/messages'tan çekerek gösterir.</p>
+
+  <div id="log"></div>
+
+  <div style="margin-top: 12px;">
+    <input id="input" data-cy="chat-input" placeholder="Mesaj yaz..." />
+    <button id="send">Gönder</button>
+  </div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+
+    function render(messages){
+      logEl.innerHTML = messages.map(m => `<div class="msg"><span class="from">${m.from}:</span>${m.body}</div>`).join('');
+    }
+
+    async function getMessages(){
+      const res = await fetch('/api/messages');
+      const data = await res.json();
+      render(data.messages || []);
+    }
+
+    // 1 sn'de bir mesajları çek
+    setInterval(getMessages, 1000);
+    getMessages();
+
+    // Gönder butonu: yazdığın metni backende POST eder
+    sendBtn.onclick = async () => {
+      const text = input.value.trim();
+      if(!text) return;
+      await fetch('/api/send', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text }) });
+      input.value = '';
+    };
+  </script>
+</body>
+</html>
