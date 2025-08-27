@@ -13,6 +13,6 @@ describe('Chat — inbound mesaj akışı', () => {
       cy.task('sendInboundWebhook', payload).should('equal', true);
     });
 
-    cy.contains('Hoş geldin!').should('be.visible');
+    cy.contains('Deneme için yanlış!').should('be.visible');
   });
 });
