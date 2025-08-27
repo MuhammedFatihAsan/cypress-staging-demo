@@ -1,0 +1,14 @@
+name: chat-webhook-test
+on: { workflow_dispatch: {} }
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test message to Google Chat
+        env:
+          CHAT_WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" \
+            -d '{"text":"✅ Chat webhook testi: Merhaba!"}' \
+            "$CHAT_WEBHOOK"
