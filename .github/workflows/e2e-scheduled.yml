@@ -2,26 +2,35 @@ name: e2e-scheduled
 
 on:
   schedule:
-    - cron: '0 */6 * * *'    # 6 saatte bir (UTC). İstanbul için +3 saat farkı düşün.
-  workflow_dispatch: {}
+    - cron: "*/15 * * * *"   # Her 15 dakikada bir (UTC)
+  workflow_dispatch: {}       # Elle tetiklemek için
 
 jobs:
-  cypress:
+  e2e:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'npm' }
 
-      - run: npm ci
+      - name: Install deps
+        run: npm ci
 
-      # Testi çalıştır. Çıkış kodunu yakala ki hata olursa bildirime geçelim.
-      - name: Run Cypress
+      - name: Start app (background) and wait for health
+        run: |
+          node server.js &                       # app'i arkada başlat
+          for i in {1..30}; do                   # 30 sn'ye kadar bekle
+            curl -sf http://127.0.0.1:3000/health && break
+            sleep 1
+          done
+
+      - name: Run Cypress (headless)
         id: run
-        shell: bash
         env:
-          CY_BASE_URL: ${{ secrets.CY_BASE_URL }}
-          CY_WEBHOOK_BASE: ${{ secrets.CY_WEBHOOK_BASE }}
+          CY_BASE_URL: http://127.0.0.1:3000
+          CY_WEBHOOK_BASE: http://127.0.0.1:3000
         run: |
           set +e
           npx cypress run --reporter junit --reporter-options "mochaFile=reports/junit/results-[hash].xml"
@@ -29,7 +38,7 @@ jobs:
           echo "status=$STATUS" >> $GITHUB_OUTPUT
           exit 0
 
-      - name: Upload artifacts (screenshots/videos/reports)
+      - name: Upload artifacts (videos/screenshots/reports)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -39,17 +48,12 @@ jobs:
             cypress/videos
             reports
 
-      # 🔔 Google Chat bildirimi (sadece hata olursa)
       - name: Notify Google Chat on failure
         if: steps.run.outputs.status != '0'
         env:
           CHAT_WEBHOOK: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          MSG=$(cat <<'EOF'
-          {
-            "text": "🚨 *Cypress scheduled run FAILED*\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nRun: ${RUN_URL}"
-          }
-          EOF
-          )
-          curl -s -X POST -H "Content-Type: application/json" -d "$MSG" "$CHAT_WEBHOOK"
+          curl -s -X POST -H "Content-Type: application/json" \
+            -d "{\"text\":\"🚨 *Cypress scheduled run FAILED*\nRepo: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nRun: ${RUN_URL}\"}" \
+            "$CHAT_WEBHOOK"
